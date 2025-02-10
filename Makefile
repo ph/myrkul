@@ -2,6 +2,11 @@
 ci-test: ## - test ci workflow locally.
 	act -W .github/workflows/test-build-deploy.yml
 
+## check: linter and format
+check: ## - check run clippy and fmt
+	cargo clippy
+	cargo fmt
+
 ## help : Show this help.
 help: Makefile
 	@printf "Usage: make [target] [VARIABLE=value]\nTargets:\n"
