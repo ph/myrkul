@@ -1,9 +1,8 @@
-use std::collections::BTreeSet;
-
 use crate::{ast::Value, runtime::LexicalScope};
 
 type Atom = String;
 
+#[allow(dead_code)]
 #[derive(Debug, Eq, PartialOrd, Ord)]
 enum ArgumentType {
     Single(String),
@@ -47,6 +46,7 @@ enum Arity {
     Variadic(usize),
 }
 
+#[allow(dead_code)]
 struct Function {
     name: Atom,
     args: Vec<ArgumentType>,
@@ -61,30 +61,31 @@ impl std::fmt::Display for Arity {
     }
 }
 
+#[allow(dead_code)]
 impl Function {
     fn new(name: Atom, args: Vec<ArgumentType>) -> Function {
         Function { name, args }
     }
 
-    fn eval(&self, scope: LexicalScope, args: Vec<Value>) -> Result<Value, FunctionError> {
+    fn eval(&self, _scope: LexicalScope, args: Vec<Value>) -> Result<Value, FunctionError> {
         self.match_arity(&args)?;
         Ok(Value::Bool(true))
     }
 
-    fn match_arity(&self, args: &Vec<Value>) -> Result<(), FunctionError> {
+    fn match_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         let arity = self.arity();
 
         match arity {
             Arity::Finite(count) => {
                 if args.len() == count {
-                    return Ok(());
+                    Ok(())
                 } else {
                     Err(FunctionError::InvalidArity(arity, args.len()))
                 }
             }
             Arity::Variadic(count) => {
                 if args.len() >= count {
-                    return Ok(());
+                    Ok(())
                 } else {
                     Err(FunctionError::InvalidArity(arity, args.len()))
                 }
@@ -104,23 +105,23 @@ impl Function {
     }
 }
 
-mod test {
-    use super::*;
+// mod test {
+//     use super::*;
 
-    fn test_create_function() {
-        let f = Function {
-            name: "foo".to_string(),
-            args: Vec::new(),
-        };
-    }
+// fn test_create_function() {
+//     let _f = Function {
+//         name: "foo".to_string(),
+//         args: Vec::new(),
+//     };
+// }
 
-    fn test_eval_function_no_arguments() {
-        let f = Function {
-            name: "foo".to_string(),
-            args: Vec::new(),
-        };
+// fn test_eval_function_no_arguments() {
+//     let f = Function {
+//         name: "foo".to_string(),
+//         args: Vec::new(),
+//     };
 
-        let scope = LexicalScope::new();
-        assert_eq!(f.eval(scope, Vec::new()), Ok(Value::Bool(true)));
-    }
-}
+//     let scope = LexicalScope::new();
+//     assert_eq!(f.eval(scope, Vec::new()), Ok(Value::Bool(true)));
+// }
+// }

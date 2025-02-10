@@ -3,6 +3,7 @@ use std::io::Write;
 use super::{terminal, Context, Error};
 
 /// Output is a trait that defines the interface for printing a Context.
+#[allow(dead_code)]
 pub trait Output {
     fn print(&mut self, context: &Context) -> Result<(), Error>;
     fn print_all(&mut self, contexts: &[Context]) -> Result<(), Error> {
@@ -19,6 +20,7 @@ pub struct PlainConsole<W: Write> {
 }
 
 /// Implement the Output trait for PlainConsole.
+#[allow(dead_code)]
 impl<W: Write> PlainConsole<W> {
     pub fn new(out: W) -> Self {
         Self { out }
@@ -45,6 +47,7 @@ pub struct ColorConsole<W: Write> {
     out: W,
 }
 
+#[allow(dead_code)]
 impl<W: Write> ColorConsole<W> {
     pub fn new(out: W) -> Self {
         Self { out }

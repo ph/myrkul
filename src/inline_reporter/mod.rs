@@ -31,6 +31,7 @@ impl From<std::io::Error> for Error {
 
 /// Context holder the context where an error or a message should be applied to the source code.
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct Context {
     pub line: usize,
     pub column: usize,
@@ -38,10 +39,12 @@ pub struct Context {
     pub before_context: String,
 }
 
+#[allow(dead_code)]
 pub struct Reporter {
     before_context: usize,
 }
 
+#[allow(dead_code)]
 impl Reporter {
     pub fn new(before_context: usize) -> Self {
         Self { before_context }
@@ -72,7 +75,7 @@ impl Reporter {
             if current_message.line() == line_number {
                 let before_context = circular_buffer
                     .iter()
-                    .map(|s| s.clone())
+                    .cloned()
                     .collect::<Vec<_>>()
                     .join("\n");
 

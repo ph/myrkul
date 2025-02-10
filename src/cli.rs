@@ -3,10 +3,7 @@ use std::{fs, io, io::Write, path::PathBuf};
 use clap::{arg, Command};
 use rustyline::{error::ReadlineError, DefaultEditor};
 
-use crate::{
-    default_runtime,
-    tokenizer::{source::Source, Tokenizer},
-};
+use crate::tokenizer::{source::Source, Tokenizer};
 
 fn cli() -> Command {
     Command::new("myrkul")
@@ -23,16 +20,14 @@ fn cli() -> Command {
 }
 
 pub fn execute() -> Result<(), Box<dyn std::error::Error>> {
-    let cmd = cli();
+    let _cmd = cli();
     let matches = cli().get_matches();
 
     match matches.subcommand() {
         Some(("repl", _sub_matches)) => execute_repl(ReplArgs),
         Some(("version", _sub_matches)) => execute_version(VersionArgs)?,
         Some(("run", sub_matches)) => {
-            let file = sub_matches
-                .get_one::<String>("file")
-                .map(|s| PathBuf::from(s));
+            let file = sub_matches.get_one::<String>("file").map(PathBuf::from);
             let stdin_input = sub_matches.get_one::<String>("stdin").cloned();
 
             execute_run(RunArgs { file, stdin_input })?
@@ -93,14 +88,14 @@ fn execute_run(args: RunArgs) -> Result<(), Box<dyn std::error::Error>> {
         sb.push_str(&content);
     }
 
-    let mut source = Source::new(file_path, sb);
+    let source = Source::new(file_path, sb);
     execute_code(source)?;
 
     Ok(())
 }
 
-fn execute_code(mut source: Source) -> Result<(), Box<dyn std::error::Error>> {
-    let tokens = Tokenizer::new(&mut source).parse().unwrap();
+fn execute_code(source: Source) -> Result<(), Box<dyn std::error::Error>> {
+    let tokens = Tokenizer::new(&source).parse().unwrap();
     println!("{:?}", tokens);
 
     Ok(())

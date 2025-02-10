@@ -7,6 +7,7 @@ pub struct CircularBuffer<T> {
 
 pub type Iter<'a, T> = Chain<IterSlice<'a, T>, IterSlice<'a, T>>;
 
+#[allow(dead_code)]
 impl<T> CircularBuffer<T> {
     pub fn new(capacity: usize) -> Self {
         Self {

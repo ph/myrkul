@@ -1,6 +1,6 @@
 use crate::runtime::LexicalScope;
 
+#[allow(dead_code)]
 pub fn default_runtime() -> LexicalScope {
-    let mut scope = LexicalScope::new();
-    scope
+    LexicalScope::new()
 }

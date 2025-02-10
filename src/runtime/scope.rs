@@ -4,7 +4,7 @@ use std::{
 };
 
 #[derive(Debug)]
-enum LexicalScopeError {
+pub enum LexicalScopeError {
     SymbolNotFound(Atom),
 }
 
@@ -60,6 +60,7 @@ pub struct LexicalScope {
     scopes: VecDeque<Scope>,
 }
 
+#[allow(dead_code)]
 impl LexicalScope {
     pub fn new() -> Self {
         let global_scope = Scope::new();

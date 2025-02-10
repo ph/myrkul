@@ -2,14 +2,11 @@ use std::process;
 
 use tracing::Level;
 
-use crate::tokenizer::tokenize;
-
 mod ast;
 mod cli;
 mod default_runtime;
 mod function;
 mod inline_reporter;
-mod interpreter;
 mod runtime;
 mod tokenizer;
 
@@ -18,6 +15,8 @@ fn setup_logging() {
 }
 
 fn main() {
+    setup_logging();
+
     match cli::execute() {
         Ok(_) => process::exit(exitcode::OK),
         Err(e) => {

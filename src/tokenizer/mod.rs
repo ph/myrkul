@@ -6,8 +6,11 @@ pub mod source;
 
 #[derive(Debug)]
 pub enum Error {
+    #[allow(dead_code)]
     StringLiteralNotClosed(SourceLoc),
+    #[allow(dead_code)]
     InvalidFloat(SourceLoc, String),
+    #[allow(dead_code)]
     InvalidInt(SourceLoc, String),
 }
 
@@ -34,10 +37,8 @@ pub struct AggregatedError<T> {
 
 impl<T: std::error::Error + Display> Display for AggregatedError<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Aggregated error:\n")?;
-
         for error in &self.errors {
-            write!(f, "\t{}\n", error)?;
+            writeln!(f, "\t{}", error)?;
         }
 
         Ok(())
@@ -61,7 +62,7 @@ pub enum Token {
     Int(SourceLoc, i64),
     Float(SourceLoc, f64),
     Atom(SourceLoc, String),
-    EOF,
+    Eof,
 }
 
 impl Token {
@@ -73,7 +74,7 @@ impl Token {
             Self::Int(_, i) => i.to_string().len(),
             Self::Float(_, n) => n.to_string().len(),
             Self::Atom(_, s) => s.len(),
-            Self::EOF => 0,
+            Self::Eof => 0,
         }
     }
 }
@@ -87,7 +88,7 @@ impl Display for Token {
             Self::Int(_, i) => write!(f, "{}", i),
             Self::Float(_, n) => write!(f, "{}", n),
             Self::Atom(_, s) => write!(f, "{}", s),
-            Self::EOF => write!(f, "EOF"),
+            Self::Eof => write!(f, "EOF"),
         }
     }
 }
@@ -186,7 +187,7 @@ impl<'a> TokenizerIter<'a> {
             }
         }
 
-        Ok(Token::EOF)
+        Ok(Token::Eof)
     }
 
     fn consume_atom(&mut self) -> Result<Token, Error> {
@@ -198,10 +199,7 @@ impl<'a> TokenizerIter<'a> {
                     return false;
                 }
 
-                match c {
-                    '(' | ')' => false,
-                    _ => true,
-                }
+                !matches!(c, '(' | ')')
             })
         })
         .collect::<String>();
@@ -250,7 +248,7 @@ impl<'a> TokenizerIter<'a> {
     fn consume_number(&mut self) -> Result<Token, Error> {
         let loc = self.loc();
 
-        let n = std::iter::from_fn(|| self.iter.next_if(|c| c.is_digit(10) || *c == '.'))
+        let n = std::iter::from_fn(|| self.iter.next_if(|c| c.is_ascii_digit() || *c == '.'))
             .collect::<String>();
 
         self.advance_column(n.len() as u32);
@@ -291,17 +289,18 @@ impl Iterator for TokenizerIter<'_> {
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.parse_expression() {
-            Ok(Token::EOF) => None,
+            Ok(Token::Eof) => None,
             t => Some(t),
         }
     }
 }
 
 /// Tokenize a string
+#[allow(dead_code)]
 pub fn tokenize(src: impl Into<String>) -> Result<Tokens, AggregatedError<Error>> {
-    let mut source = Source::from(src.into());
+    let source = Source::from(src.into());
     tracing::info!("tokenize!");
-    Tokenizer::new(&mut source).parse()
+    Tokenizer::new(&source).parse()
 }
 
 #[cfg(test)]
