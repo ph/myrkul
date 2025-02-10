@@ -21,18 +21,10 @@
           buildInputs =
             [
               (rustVersion.override {
-                extensions = [ "rust-src" "clippy" ];
-                targets = [ "wasm32-unknown-unknown" ];
+                extensions = [ "rust-src" "clippy" "rustfmt" ];
               })
-              pkgs.trunk
               pkgs.rust-analyzer
-              pkgs.protobuf
-              pkgs.openssl
-              pkgs.buf
-              pkgs.glibc
-              pkgs.cmake
-              pkgs.pkg-config
-              pkgs.perl
+              pkgs.act
             ];
         };
       });

@@ -1,0 +1,49 @@
+name: Test, Build and deploy
+run-name: build and test
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+env:
+  CARGO_TERM_COLOR: always
+jobs:
+  clippy:
+    name: Run clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - name: setup Rust roolchain
+        uses: hecrj/setup-rust-action@v2
+        with:
+          rust-version: stable
+      - name: clippy
+        run: cargo clippy --all --all-features --tests -- -D warnings
+  fmt:
+    name: Run fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - name: setup Rust roolchain
+        uses: hecrj/setup-rust-action@v2
+        with:
+          rust-version: stable
+      - name: rustfmt
+        run: cargo fmt --all --check
+  test-suite:
+    name: Run tests
+    runs-on: ubuntu-latest
+    needs: [clippy, fmt]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - name: setup Rust roolchain
+        uses: hecrj/setup-rust-action@v2
+        with:
+          rust-version: stable
+      - name: cargo test
+        run: cargo test --all-features
+      - name: cargo build
+        run: cargo build
