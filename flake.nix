@@ -24,6 +24,8 @@
             pkgs.lld             
             pkgs.pkg-config
             pkgs.rust-analyzer
+            pkgs.just
+            pkgs.act
           ];
 
           shellHook = ''
