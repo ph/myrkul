@@ -1,21 +1,17 @@
 #[derive(Debug, Clone, PartialEq)]
 pub struct Source {
     bytes: usize,
-    line: usize,
 }
 
 impl std::fmt::Display for Source {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "({}:{})", self.line, self.bytes)
+        write!(f, "({})", self.bytes)
     }
 }
 
 impl Source {
-    fn new(column: usize, line: usize) -> Self {
-        Source {
-            bytes: column,
-            line,
-        }
+    fn new(column: usize) -> Self {
+        Source { bytes: column }
     }
 }
 
@@ -104,12 +100,11 @@ impl<'s> IntoIterator for Lexer<'s> {
 pub struct LexerIntoIterator<'s> {
     remainder: &'s str,
     column: usize,
-    line: usize,
 }
 
 impl<'s> LexerIntoIterator<'s> {
     fn src(&self) -> Source {
-        Source::new(self.column, self.line)
+        Source::new(self.column)
     }
 }
 
@@ -167,7 +162,6 @@ impl<'s> Iterator for LexerIntoIterator<'s> {
                 // ignore
                 c if c.is_whitespace() => {
                     self.column = 0;
-                    self.line += 1;
                     continue; // find next token
                 }
                 _ => State::BeginIdentifier,
@@ -220,10 +214,7 @@ impl<'s> Iterator for LexerIntoIterator<'s> {
                                     escaped = true
                                 }
                             }
-                            Some('\n') | Some('\r') => {
-                                self.column = 0;
-                                self.line += 1;
-                            }
+                            Some('\n') | Some('\r') => {}
                             Some(_) => escaped = false,
                             None => {
                                 return Some(Err(LexerErr::UnterminatedStringLiteral(self.src())))
@@ -288,7 +279,7 @@ mod test {
     fn parse_identifier() {
         let tokens = tokenize("+").unwrap();
         assert_eq!(1, tokens.len());
-        assert_eq!(vec![Token::Identifier(Source::new(0, 0), "+")], tokens);
+        assert_eq!(vec![Token::Identifier(Source::new(0), "+")], tokens);
     }
 
     #[test]
@@ -297,8 +288,8 @@ mod test {
         assert_eq!(2, tokens.len());
         assert_eq!(
             vec![
-                Token::Identifier(Source::new(0, 0), "+"),
-                Token::Identifier(Source::new(2, 0), "-")
+                Token::Identifier(Source::new(0), "+"),
+                Token::Identifier(Source::new(2), "-")
             ],
             tokens
         );
@@ -309,7 +300,7 @@ mod test {
         let tokens = tokenize("10").unwrap();
         assert_eq!(1, tokens.len());
         assert_eq!(
-            vec![Token::Number(Source::new(0, 0), Number::Integer(10)),],
+            vec![Token::Number(Source::new(0), Number::Integer(10)),],
             tokens
         );
     }
@@ -319,7 +310,7 @@ mod test {
         let tokens = tokenize("10.1").unwrap();
         assert_eq!(1, tokens.len());
         assert_eq!(
-            vec![Token::Number(Source::new(0, 0), Number::Float(10.1)),],
+            vec![Token::Number(Source::new(0), Number::Float(10.1)),],
             tokens
         );
     }
@@ -328,52 +319,49 @@ mod test {
     fn parse_maybe_float_but_return_identifier() {
         let tokens = tokenize("10.1a").unwrap();
         assert_eq!(1, tokens.len());
-        assert_eq!(vec![Token::Identifier(Source::new(0, 0), "10.1a"),], tokens);
+        assert_eq!(vec![Token::Identifier(Source::new(0), "10.1a"),], tokens);
     }
 
     #[test]
     fn parse_maybe_integer_but_return_identifier() {
         let tokens = tokenize("12f").unwrap();
         assert_eq!(1, tokens.len());
-        assert_eq!(vec![Token::Identifier(Source::new(0, 0), "12f"),], tokens);
+        assert_eq!(vec![Token::Identifier(Source::new(0), "12f"),], tokens);
     }
 
     #[test]
     fn parse_string() {
         let tokens = tokenize("\"hello world\"").unwrap();
         assert_eq!(1, tokens.len());
-        assert_eq!(
-            vec![Token::String(Source::new(0, 0), "hello world"),],
-            tokens
-        );
+        assert_eq!(vec![Token::String(Source::new(0), "hello world"),], tokens);
     }
 
     #[test]
     fn parse_left_paren() {
         let tokens = tokenize("(").unwrap();
         assert_eq!(1, tokens.len());
-        assert_eq!(vec![Token::LeftParen(Source::new(0, 0))], tokens);
+        assert_eq!(vec![Token::LeftParen(Source::new(0))], tokens);
     }
 
     #[test]
     fn parse_right_paren() {
         let tokens = tokenize(")").unwrap();
         assert_eq!(1, tokens.len());
-        assert_eq!(vec![Token::RightParen(Source::new(0, 0))], tokens);
+        assert_eq!(vec![Token::RightParen(Source::new(0))], tokens);
     }
 
     #[test]
     fn parse_left_bracket() {
         let tokens = tokenize("[").unwrap();
         assert_eq!(1, tokens.len());
-        assert_eq!(vec![Token::LeftBracket(Source::new(0, 0))], tokens);
+        assert_eq!(vec![Token::LeftBracket(Source::new(0))], tokens);
     }
 
     #[test]
     fn parse_right_bracket() {
         let tokens = tokenize("]").unwrap();
         assert_eq!(1, tokens.len());
-        assert_eq!(vec![Token::RightBracket(Source::new(0, 0))], tokens);
+        assert_eq!(vec![Token::RightBracket(Source::new(0))], tokens);
     }
 
     #[test]
@@ -382,11 +370,11 @@ mod test {
         assert_eq!(5, tokens.len());
         assert_eq!(
             vec![
-                Token::LeftParen(Source::new(0, 0)),
-                Token::Identifier(Source::new(1, 0), "+"),
-                Token::Number(Source::new(3, 0), Number::Integer(1)),
-                Token::Number(Source::new(5, 0), Number::Float(2.0)),
-                Token::RightParen(Source::new(8, 0)),
+                Token::LeftParen(Source::new(0)),
+                Token::Identifier(Source::new(1), "+"),
+                Token::Number(Source::new(3), Number::Integer(1)),
+                Token::Number(Source::new(5), Number::Float(2.0)),
+                Token::RightParen(Source::new(8)),
             ],
             tokens
         );
@@ -398,15 +386,15 @@ mod test {
         assert_eq!(9, tokens.len());
         assert_eq!(
             vec![
-                Token::LeftParen(Source::new(0, 0)),
-                Token::Identifier(Source::new(1, 0), "+"),
-                Token::Number(Source::new(3, 0), Number::Integer(1)),
-                Token::LeftParen(Source::new(5, 0)),
-                Token::Identifier(Source::new(6, 0), "-"),
-                Token::Number(Source::new(8, 0), Number::Integer(6)),
-                Token::Number(Source::new(10, 0), Number::Integer(3)),
-                Token::RightParen(Source::new(11, 0)),
-                Token::RightParen(Source::new(12, 0)),
+                Token::LeftParen(Source::new(0)),
+                Token::Identifier(Source::new(1), "+"),
+                Token::Number(Source::new(3), Number::Integer(1)),
+                Token::LeftParen(Source::new(5)),
+                Token::Identifier(Source::new(6), "-"),
+                Token::Number(Source::new(8), Number::Integer(6)),
+                Token::Number(Source::new(10), Number::Integer(3)),
+                Token::RightParen(Source::new(11)),
+                Token::RightParen(Source::new(12)),
             ],
             tokens
         );
@@ -418,12 +406,12 @@ mod test {
         // assert_eq!(6, tokens.len());
         assert_eq!(
             vec![
-                Token::LeftParen(Source::new(0, 0)),
-                Token::Identifier(Source::new(1, 0), "list"),
-                Token::String(Source::new(6, 0), "a"),
-                Token::String(Source::new(10, 0), "b"),
-                Token::String(Source::new(14, 0), "c"),
-                Token::RightParen(Source::new(17, 0)),
+                Token::LeftParen(Source::new(0)),
+                Token::Identifier(Source::new(1), "list"),
+                Token::String(Source::new(6), "a"),
+                Token::String(Source::new(10), "b"),
+                Token::String(Source::new(14), "c"),
+                Token::RightParen(Source::new(17)),
             ],
             tokens
         );
