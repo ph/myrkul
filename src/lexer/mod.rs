@@ -217,7 +217,7 @@ impl<'s> Iterator for LexerIntoIterator<'s> {
                             Some('\n') | Some('\r') => {}
                             Some(_) => escaped = false,
                             None => {
-                                return Some(Err(LexerErr::UnterminatedStringLiteral(self.src())))
+                                return Some(Err(LexerErr::UnterminatedStringLiteral(self.src())));
                             }
                         }
                     }
