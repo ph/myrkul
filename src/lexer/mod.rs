@@ -1,18 +1,21 @@
 #[derive(Debug, Clone, PartialEq)]
 pub struct Source {
-    column: usize,
+    bytes: usize,
     line: usize,
 }
 
 impl std::fmt::Display for Source {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "({}:{})", self.line, self.column)
+        write!(f, "({}:{})", self.line, self.bytes)
     }
 }
 
 impl Source {
     fn new(column: usize, line: usize) -> Self {
-        Source { column, line }
+        Source {
+            bytes: column,
+            line,
+        }
     }
 }
 
@@ -52,6 +55,15 @@ pub enum Number {
     Float(f64),
 }
 
+impl std::fmt::Display for Number {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Number::Integer(n) => write!(f, "Integer({})", n),
+            Number::Float(n) => write!(f, "Float({})", n),
+        }
+    }
+}
+
 impl std::fmt::Display for Token<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -60,8 +72,8 @@ impl std::fmt::Display for Token<'_> {
             Token::RightParen(..) => write!(f, ")"),
             Token::LeftBracket(..) => write!(f, "["),
             Token::RightBracket(..) => write!(f, "]"),
-            Token::String(value, ..) => write!(f, "String(\"{}\")", value),
-            Token::Number(value, ..) => write!(f, "Numer({})", value),
+            Token::String(_, value, ..) => write!(f, "String(\"{}\")", value),
+            Token::Number(_, value, ..) => write!(f, "Numer({})", value),
         }
     }
 }
@@ -127,28 +139,28 @@ impl<'s> Iterator for LexerIntoIterator<'s> {
             let s = match c {
                 '(' => {
                     let tok = Token::LeftParen(self.src());
-                    self.column += 1;
+                    self.column += c.len_utf8();
                     return emit(tok);
                 }
                 ')' => {
                     let tok = Token::RightParen(self.src());
-                    self.column += 1;
+                    self.column += c.len_utf8();
                     return emit(tok);
                 }
                 '[' => {
                     let tok = Token::LeftBracket(self.src());
-                    self.column += 1;
+                    self.column += c.len_utf8();
                     return emit(tok);
                 }
                 ']' => {
                     let tok = Token::RightBracket(self.src());
-                    self.column += 1;
+                    self.column += c.len_utf8();
                     return emit(tok);
                 }
                 // partial match
                 '"' => State::BeginString,
                 ' ' => {
-                    self.column += 1;
+                    self.column += c.len_utf8();
                     continue;
                 }
                 c if c.is_numeric() => State::BeginMaybeNumber,
@@ -171,7 +183,7 @@ impl<'s> Iterator for LexerIntoIterator<'s> {
                     self.remainder = &cur_str[ending..];
 
                     let tok = Token::Identifier(self.src(), v);
-                    self.column += v.len_utf8();
+                    self.column += v.len();
                     emit(tok)
                 }
                 State::BeginString => {
@@ -191,14 +203,14 @@ impl<'s> Iterator for LexerIntoIterator<'s> {
 
                                 let v = &self.remainder[..ending - 1];
 
-                                if ending + 1 >= self.remainder.len() {
+                                if ending >= self.remainder.len() {
                                     self.remainder = "";
                                 } else {
-                                    self.remainder = &self.remainder[ending + 1..];
+                                    self.remainder = &self.remainder[ending..];
                                 }
 
                                 let tok = Token::String(self.src(), v);
-                                self.column += v.len();
+                                self.column += v.len() + 2;
                                 return emit(tok);
                             }
                             Some('\\') => {
@@ -401,7 +413,6 @@ mod test {
     }
 
     #[test]
-    // (list "a" "b" "c")
     fn parse_list_of_strings() {
         let tokens = tokenize("(list \"a\" \"b\" \"c\")").unwrap();
         // assert_eq!(6, tokens.len());
@@ -412,7 +423,7 @@ mod test {
                 Token::String(Source::new(6, 0), "a"),
                 Token::String(Source::new(10, 0), "b"),
                 Token::String(Source::new(14, 0), "c"),
-                Token::RightParen(Source::new(12, 0)),
+                Token::RightParen(Source::new(17, 0)),
             ],
             tokens
         );
