@@ -126,9 +126,9 @@ impl<'s> Iterator for LexerIntoIterator<'s> {
             let emit = move |tok| Some(Ok(tok));
 
             enum State {
-                BeginIdentifier,
-                BeginString,
-                BeginMaybeNumber,
+                Identifier,
+                String,
+                MaybeNumber,
             }
 
             let s = match c {
@@ -153,25 +153,25 @@ impl<'s> Iterator for LexerIntoIterator<'s> {
                     return emit(tok);
                 }
                 // partial match
-                '"' => State::BeginString,
+                '"' => State::String,
                 ' ' => {
                     self.column += c.len_utf8();
                     continue;
                 }
-                c if c.is_numeric() => State::BeginMaybeNumber,
+                c if c.is_numeric() => State::MaybeNumber,
                 // ignore
                 c if c.is_whitespace() => {
                     self.column = 0;
                     continue; // find next token
                 }
-                _ => State::BeginIdentifier,
+                _ => State::Identifier,
             };
 
             break match s {
-                State::BeginIdentifier => {
+                State::Identifier => {
                     let ending = cur_str
                         .find(|c: char| is_end_of_identifier(c))
-                        .unwrap_or_else(|| cur_str.len());
+                        .unwrap_or(cur_str.len());
 
                     let v = &cur_str[..ending];
                     self.remainder = &cur_str[ending..];
@@ -180,7 +180,7 @@ impl<'s> Iterator for LexerIntoIterator<'s> {
                     self.column += v.len();
                     emit(tok)
                 }
-                State::BeginString => {
+                State::String => {
                     let mut ending = 0;
                     let mut escaped = false;
 
@@ -207,13 +207,7 @@ impl<'s> Iterator for LexerIntoIterator<'s> {
                                 self.column += v.len() + 2;
                                 return emit(tok);
                             }
-                            Some('\\') => {
-                                if escaped {
-                                    escaped = false;
-                                } else {
-                                    escaped = true
-                                }
-                            }
+                            Some('\\') => escaped = !escaped,
                             Some('\n') | Some('\r') => {}
                             Some(_) => escaped = false,
                             None => {
@@ -222,10 +216,10 @@ impl<'s> Iterator for LexerIntoIterator<'s> {
                         }
                     }
                 }
-                State::BeginMaybeNumber => {
+                State::MaybeNumber => {
                     let ending = cur_str
                         .find(|c: char| is_end_of_identifier(c))
-                        .unwrap_or_else(|| cur_str.len());
+                        .unwrap_or(cur_str.len());
 
                     let v = &cur_str[..ending];
                     self.remainder = &cur_str[ending..];
